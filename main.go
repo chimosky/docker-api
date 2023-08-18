@@ -1,27 +1,39 @@
 package main
 
 import (
-//	"net/http"
-	"os/exec"
-	"log"
-	"fmt"
+	"net/http"
 
-//	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 )
 
-// Figure out the parameters you want each
-// container to share and then add that here,
-// typically it'd be the name and maybe base image.
-// A default base image where there's none specified.
-type Container struct {
+type container struct {
+	ID	string `json:"id"`
 	Name	string `json:"name"`
+	IP	string `json:"ip"`
+	Tag	string `json:"tag"`
 }
 
-func main() {
+var containers = []container{}
 
-	out, err := exec.Command("docker", "images").Output()
-	if err != nil {
-		log.Fatal(err)
+func main() {
+	router := gin.Default()
+	router.GET("/containers", getContainers)
+	router.POST("/containers", postContainers)
+
+	router.Run("localhost:8080")
+}
+
+func getContainers(c *gin.Context) {
+	c.IndentedJSON(http.StatusOK, containers)
+}
+
+func postContainers(c *gin.Context) {
+	var newContainer container
+
+	if err := c.BindJSON(&newContainer); err != nil {
+		return
 	}
-	fmt.Printf("\n%s\n", out)
+
+	containers = append(containers, newContainer)
+	c.IndentedJSON(http.StatusCreated, newContainer)
 }
