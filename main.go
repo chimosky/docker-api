@@ -6,14 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+
 type container struct {
-	ID	string `json:"id"`
 	Name	string `json:"name"`
-	IP	string `json:"ip"`
 	Tag	string `json:"tag"`
 }
 
-var containers = []container{}
+var containers []containerDetails
 
 func main() {
 	router := gin.Default()
@@ -29,11 +28,18 @@ func getContainers(c *gin.Context) {
 
 func postContainers(c *gin.Context) {
 	var newContainer container
+	var details containerDetails
 
 	if err := c.BindJSON(&newContainer); err != nil {
 		return
 	}
 
-	containers = append(containers, newContainer)
-	c.IndentedJSON(http.StatusCreated, newContainer)
+        if tag := newContainer.Tag; tag != "latest" {
+		details = Run(newContainer.Name, tag)
+	} else {
+		details = Run(newContainer.Name, "latest")
+	}
+
+	containers = append(containers, details)
+	c.IndentedJSON(http.StatusCreated, details)
 }
