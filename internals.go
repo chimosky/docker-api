@@ -18,20 +18,36 @@ func Run(name, tag string) containerDetails {
         arg := []string{name, tag}
 	args := strings.Join(arg, ":")
 	log.Print(args)
-	out, err := exec.Command("docker", "run", "-d", args).Output() 	
+
+	id := runAndReturnID(args)
+	ip := getIP(id)
+
+	detailedContainer := containerDetails {
+		ID: id,
+		Name: name,
+		IP: ip,
+		Tag: tag,
+	}
+
+	return detailedContainer
+}
+
+func runAndReturnID(args string) string {
+	out, err := exec.Command("docker", "run", "-d", args).Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return string(out)[:12]
+}
+
+func getIP(id string) string {
+	format := "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"
+	ip, err := exec.Command("docker", "inspect", format, id).Output()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_out := string(out)
-	ip, err := exec.Command("docker", "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", _out).Output()
-	detailedContainer := containerDetails {
-		ID: _out[:12],
-		Name: name,
-		IP: string(ip),
-		Tag: tag,
-	}
-
-	return detailedContainer
+	return string(ip)
 }
